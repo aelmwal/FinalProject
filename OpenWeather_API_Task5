@@ -1,0 +1,132 @@
+
+#OpenWeather_API
+#5-day weather forecasts for a list of cities
+
+library(rvest)
+library(httr)
+library(tidyverse)
+
+#TASK: 5-day weather forecasts for a list of cities using the OpenWeather API
+
+# Create some empty vectors to hold data temporarily
+
+# City name column
+city <- c()
+# Weather column, rainy or cloudy, etc
+weather <- c()
+# Sky visibility column
+visibility <- c()
+# Current temperature column
+temp <- c()
+# Max temperature column
+temp_min <- c()
+# Min temperature column
+temp_max <- c()
+# Pressure column
+pressure <- c()
+# Humidity column
+humidity <- c()
+# Wind speed column
+wind_speed <- c()
+# Wind direction column
+wind_deg <- c()
+# Forecast timestamp
+forecast_datetime <- c()
+# Season column
+# Note that for season, you can hard code a season value from levels Spring, Summer, Autumn, and Winter based on your current month.
+season <- c()
+
+
+# Get forecast data for a given city list
+get_weather_forecast_by_cities <- function(city_names){
+  df <- data.frame()
+  for (city_name in city_names){
+    # Forecast API URL
+    forecast_url <- 'https://api.openweathermap.org/data/2.5/forecast'
+    # Create query parameters
+    forecast_query <- list(q = city_name, appid = "bce38ed28d19243923b9d7b47aa3b8ad", units="metric")
+    # Make HTTP GET call for the given city
+    response <- GET(forecast_url, query=forecast_query)
+    #parse
+    json_list <- content(response, as = "parsed")
+    # Note that the 5-day forecast JSON result is a list of lists. You can print the reponse to check the results
+    results <- json_list$list
+    
+    # Loop the json result
+    for(result in results) {
+      city <- c(city, city_name)
+      
+    }
+    
+    # Add the R Lists into a data frame
+    # $weather is also a list with one element, its $main element indicates the weather status such as clear or rain
+    city <- c(city, result$city_name)
+    weather <- c(weather, result$weather[[1]]$main)
+    # Get Visibility
+    visibility <- c(visibility, result$visibility)
+    # Get current temperature 
+    temp <- c(temp, result$main$temp)
+    # Get min temperature 
+    temp_min <- c(temp_min, result$main$temp_min)
+    # Get max temperature 
+    temp_max <- c(temp_max, result$main$temp_max)
+    # Get pressure
+    pressure <- c(pressure, result$main$pressure)
+    # Get humidity
+    humidity <- c(humidity, result$main$humidity)
+    # Get wind speed
+    wind_speed <- c(wind_speed, result$wind$speed)
+    # Get wind direction
+    wind_deg <- c(wind_deg, result$wind$deg)
+    #forecast_datetime
+    forecast_datetime <- c(forecast_datetime, result$dt_txt)
+    #Get season
+    library(zoo)
+    months <- as.numeric(format(as.Date(forecast_datetime), '%m'))
+    index <- setNames( rep(c('winter', 'spring', 'summer', 'fall'),
+                           each=3), c(12,1:11))
+    season <- unname(index[as.character(months)])
+    
+    
+    # Combine all vectors
+    weather_data_frame <- data.frame(city=city_name,
+                                     weather=weather, 
+                                     visibility=visibility, 
+                                     temp=temp, 
+                                     temp_min=temp_min, 
+                                     temp_max=temp_max, 
+                                     pressure=pressure, 
+                                     humidity=humidity, 
+                                     wind_speed=wind_speed, 
+                                     wind_deg=wind_deg,
+                                     forecast_datetime=forecast_datetime,
+                                     season=season)
+  }
+  
+  # Return a data frame
+  print(weather_data_frame)
+  
+}
+
+
+#Complete and call get_weather_forecast_by_cities function with a list of cities, and write the data frame into a csv file called cities_weather_forecast.csv
+
+cities <- c("Seoul", "Paris", "London", "Toronto")
+cities_weather_df <- get_weather_forecast_by_cities(cities)
+
+glimpse(cities_weather_df)
+cities_weather_df$city
+
+#I only get the number of rows for the number of cities I put in, e.g. 4 cities = I get 4 rows
+#And the results only show 4 rows of data for the last city in the list
+#I do not know how to fix this.
+
+
+
+# Write cities_weather_df to `cities_weather_forecast.csv`
+write.csv(cities_weather_df, "cities_weather_forecast.csv", row.names=FALSE)
+
+
+
+
+
